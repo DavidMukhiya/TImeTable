@@ -36,14 +36,21 @@ public class TimeTable {
         ArrayList<Integer> temp=new ArrayList<>();
         int sum = 0;
         int x = 0;
-        talk(morningSession, list, temp, sum,x);
+        talk(morningSession, list, temp, sum,x,180);
         System.out.println(morningSession);
         System.out.println(morningSession.isEmpty());
         for(ConferenceTalk s:morningSession){
             System.out.println(s.getTitle()+" "+s.getDuration());
         }
-
+        ArrayList<ConferenceTalk> afterNoonSession = new ArrayList<>();
         list.removeAll(morningSession);
+        temp.clear();
+        talk(afterNoonSession, list, temp, sum,x,240);
+        System.out.println(afterNoonSession);
+        System.out.println(afterNoonSession.isEmpty());
+        for(ConferenceTalk t:afterNoonSession){
+            System.out.println(t.getTitle()+" "+t.getDuration());
+        }
 
 
 
@@ -109,21 +116,34 @@ public class TimeTable {
 
     }
 
-    private static void talk(List<ConferenceTalk> morningSession, ArrayList<ConferenceTalk> list, ArrayList<Integer> temp, int sum, int x) {
+    private static void talk(List<ConferenceTalk> morningSession, ArrayList<ConferenceTalk> list, ArrayList<Integer> temp, int sum, int x,int total) {
+        int greatCount = 0;
+        if(x==0) {
+            Collections.shuffle(list);
+        }
         for(int i = x; i< list.size(); i++){
+
             sum = sum + list.get(i).getDuration();
-            if(sum <=180){
+            if(sum <=total){
                 morningSession.add(list.get(i));
-                if(sum ==180){
+                if(sum ==total){
                     break;
                 }
-            }else if(sum >180 && (i== list.size()-1)){
-                int j = temp.get(0)+1;
-                temp.clear();
-                talk(morningSession, list, new ArrayList<>(), sum, j);
-            }else if(sum >180){
+            }else if(sum >total && (i== list.size()-1)){
+                if(greatCount > list.size()/3) {
+                    Collections.shuffle(list);
+                    morningSession.clear();
+                    temp.clear();
+                    talk(morningSession, list, temp, 0, 0, 180);
+                }else {
+                    int j = (temp.get(0));
+                    temp.clear();
+                    talk(morningSession, list, new ArrayList<>(), sum, j, total);
+                }
+            }else if(sum >total){
                 temp.add(i);
                 sum = sum - list.get(i).getDuration();
+                greatCount++;
             }
         }
     }
