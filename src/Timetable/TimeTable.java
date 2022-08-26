@@ -2,79 +2,25 @@ package Timetable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class TimeTable {
     int sum = 0;
     int x = 0;
-    private Boolean talk(List<ConferenceTalk> session, ArrayList<ConferenceTalk> list, ArrayList<Integer> temp, int sum, int x,int total) {
-        int greatCount = 0;
-        Boolean result = false;
-        if(x==0) {
-            Collections.shuffle(list);
-        }
-        for(int i = x; i< list.size(); i++){
-
-            sum = sum + list.get(i).getDuration();
-            if(sum <=total){
-                session.add(list.get(i));
-                if(sum ==total){
-                    result = true;
-                    break;
-                }
-                //sum ->180
-                //30, 40,30, 30,180, 40,30, 40,30, 30, 40.     lis size-> 10    great
-            }else if(i== list.size()-1){
-                if(greatCount > list.size()/4) {
-                    Collections.shuffle(list);
-                    session.clear();
-                    temp.clear();
-                    talk(session, list, temp, 0, 0, 180);
-                }else {
-                    int j = (temp.get(0));
-                    temp.clear();
-                    talk(session, list, new ArrayList<>(), sum, j, total);
-                }
-            }else if(sum >total){
-                temp.add(i);
-                sum = sum - list.get(i).getDuration();
-                greatCount++;
-            }
-        }
-        return result;
+    static int tracknum=0;
+    TimeTable(){
+        tracknum++;
     }
 
-    private List<ConferenceTalk> getAfternoonSession(TimeTable timeTable, ArrayList<ConferenceTalk> list, ArrayList<Integer> temp) {
-        //List<ConferenceTalk> morningSession = timeTable.getMorningSession(timeTable, list, temp);
-        ArrayList<ConferenceTalk> afternoonSession = new ArrayList<>();
-        //list.removeAll();
-        temp.clear();
-        timeTable.talk(afternoonSession, list, temp, timeTable.sum, timeTable.x,240);
-        ConferenceTalk networkingEvent = new ConferenceTalk("Networking Event", 60);
-        afternoonSession.add(networkingEvent);
-        for(ConferenceTalk t:afternoonSession){
-            System.out.println(t.getTitle()+" "+t.getDuration()+" min");
+    public static ArrayList<ConferenceTalk> eventList(){
+        Scanner scan = null;
+        try {
+            scan = new Scanner(new File("src/Timetable/TestInput.txt"));
+        } catch (FileNotFoundException e) {
+           e.getMessage();
         }
-        return afternoonSession;
-    }
-
-    private List<ConferenceTalk> getMorningSession(TimeTable timeTable, ArrayList<ConferenceTalk> list, ArrayList<Integer> temp) {
-        List<ConferenceTalk> morningSession = new ArrayList<>();
-        timeTable.talk(morningSession, list, temp, timeTable.sum, timeTable.x,180);
-        ConferenceTalk lunch = new ConferenceTalk("lunch", 60);
-        list.removeAll(morningSession);
-        morningSession.add(lunch);
-        for(ConferenceTalk s:morningSession){
-            System.out.println(s.getTitle()+" "+s.getDuration()+" min");
-        }
-        return morningSession;
-    }
-    public static void main(String[] args) throws FileNotFoundException {
-        TimeTable timeTable1 = new TimeTable();
-        TimeTable timeTable2 = new TimeTable();
-        Scanner scan = new Scanner(new File("src/Timetable/TestInput.txt"));
         ArrayList<ConferenceTalk> list = new ArrayList<>();
-
         while (scan.hasNextLine()) {
             String[] input = scan.nextLine().split("    ");
             if (input[1].equals("lightning")) {
@@ -83,27 +29,72 @@ public class TimeTable {
                 list.add(new ConferenceTalk(input[0], Integer.parseInt(input[1].substring(0, 2))));
             }
         }
-        ArrayList<Integer> temp=new ArrayList<>();
-        System.out.println();
-        System.out.println();
-        System.out.println("Track1");
-        System.out.println();
-        System.out.println();
-        timeTable1.getMorningSession(timeTable1, list, temp);
-        timeTable1.getAfternoonSession(timeTable1, list, temp);
+        return list;
+    };
 
-        System.out.println();
-        System.out.println();
-        System.out.println("Track2");
-        System.out.println();
-        System.out.println();
-        timeTable2.getMorningSession(timeTable2, list, temp);
-        timeTable2.getAfternoonSession(timeTable2, list, temp);
+    public static Boolean addEvent(ArrayList<ConferenceTalk> session, ArrayList<ConferenceTalk> mainList, int sum, int targetValue) {
+        int greatCount = 0;
+        Boolean result = false;
+        Collections.shuffle(mainList);
+        for(int i = 0; i< mainList.size(); i++){
+            sum = sum + mainList.get(i).getDuration();
+            if(sum <=targetValue){
+                session.add(mainList.get(i));
+                if(sum ==targetValue){
+                    result = true;
+                    break;
+                }
+                //if it came to end just shuffle
+            }else if(i== mainList.size()-1 && result==false){
+                    session.clear();
+                    addEvent(session, mainList,0,180);
+            }else if(sum >targetValue){
+                sum = sum - mainList.get(i).getDuration();
+            }
+        }
+        return result;
+    }
+    public ArrayList<ConferenceTalk> getMorningSession(){
+        ArrayList<ConferenceTalk> morningSession = new ArrayList<>();
+        addEvent(morningSession, eventList(),0,180 );
+        morningSession.add(new ConferenceTalk("lunch", 60));
+        return morningSession;
+    }
 
+    public ArrayList<ConferenceTalk> getAfternoonSession(){
+        eventList().removeAll(getMorningSession());
+        ArrayList<ConferenceTalk> afterNoonSession = new ArrayList<>();
+        addEvent(afterNoonSession,eventList(),0, 240 );
+        afterNoonSession.add(new ConferenceTalk("NetWorking event", 60));
+        return afterNoonSession;
+    }
+
+    public static void printList(ArrayList<ConferenceTalk> anyList){
+        for(ConferenceTalk s: anyList){
+            System.out.println(s.getTitle()+" "+s.getDuration());
+        }
+    }
+
+    public static void generateTrack(TimeTable track){
+        System.out.println();
+        System.out.println();
+        System.out.println();
+
+        System.out.println("Track "+tracknum);
+        System.out.println();
+        ArrayList list = eventList();
+        ArrayList<ConferenceTalk> morningSessionList = track.getMorningSession();
+        ArrayList<ConferenceTalk> afternoonSessionList = track.getAfternoonSession();
+        printList(morningSessionList);
+        printList(afternoonSessionList);
     }
 
 
+    public static void main(String[] args) {
+        generateTrack(new TimeTable());
+        generateTrack(new TimeTable());
 
+    }
 
 }
 
